@@ -42,6 +42,33 @@ js/db.js            — IndexedDB wrapper, schema, CRUD, seeding, migration
 js/script.js        — UI logic, rendering, event handlers, keyboard shortcuts
 ```
 
+### How `js/script.js` works
+
+The file is organized into these functional sections (570 lines total):
+
+| Section | Lines | Purpose |
+|---------|-------|---------|
+| **State** | 1-4 | Bill items, current category, stock filter |
+| **Init** | 7-20 | On DOM ready: opens DB, renders categories/products/bill, starts clock |
+| **Date/Time** | 23-31 | Live clock in header |
+| **Categories** | 45-59 | Tab bar rendering and switching |
+| **Products** | 62-97 | Product card rendering, search/filter logic |
+| **Stock** | 99-113 | Stock status helpers (in/low/out) |
+| **Bill** | 115-211 | Add/remove/update items, discount calc, subtotal/tax/total |
+| **Toast** | 223-233 | Notification messages |
+| **Generate Bill** | 236-278 | Builds bill object, saves to DB, shows invoice |
+| **Invoice** | 280-322 | Modal display and print |
+| **Restore Bar** | 325-334 | Show hidden product count with restore button |
+| **Stock Filter** | 337-346 | Tab-based filtering (All / In Stock / Low / Out) |
+| **Stock Alert** | 349-363 | Badge in header showing low/out-of-stock count |
+| **Today Stats** | 366-372 | Bill count and total sales for today |
+| **History** | 375-419 | Bill history list, view, clear all |
+| **Icon Picker** | 465-477 | Populates 28 FA icons with names, selection handler |
+| **Product Management** | 480-594 | Modal open/close, save/delete/restore products |
+| **Keyboard Shortcuts** | 597-609 | Esc closes modals, Ctrl+P prints |
+
+Key flow: `DOMContentLoaded` → `DB.open()` → on ready, `renderProducts()` reads `DB.products` (in-memory cache) and builds HTML. Click events on product cards call `addToBill(id)` which updates the `billItems` object and calls `updateBill()`. `generateBill()` saves to IndexedDB and shows the invoice modal.
+
 ## Tech Stack
 
 - Vanilla JavaScript (ES6)
