@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FreshMart - Grocery Billing System</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<header class="header">
+  <div class="header-left">
+    <i class="fas fa-shopping-basket header-logo"></i>
+    <div>
+      <h1>FreshMart</h1>
+      <span class="header-subtitle">Grocery Billing System</span>
+    </div>
+  </div>
+  <div class="header-center">
+    <div class="header-stats">
+      <span><i class="fas fa-shopping-cart"></i> <strong id="todayBills">0</strong> bills today</span>
+      <span><i class="fas fa-money-bill-wave"></i> <strong id="todaySales">&#2547;0</strong> total</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="header-btn" onclick="toggleHistory()" title="Bill History">
+      <i class="fas fa-history"></i> History
+    </button>
+    <div class="header-datetime">
+      <span id="currentDate"></span>
+      <span id="currentTime"></span>
+    </div>
+  </div>
+</header>
+
+<div class="main-container">
+  <aside class="products-panel">
+    <div class="panel-header">
+      <h2><i class="fas fa-box"></i> Products</h2>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="badge" id="totalProducts">0</span>
+        <button class="btn btn-sm btn-primary" onclick="openAddProductModal()" title="Add Product"><i class="fas fa-plus"></i></button>
+      </div>
+    </div>
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="productSearch" placeholder="Search products..." oninput="renderProducts()">
+    </div>
+    <div class="category-tabs" id="categoryTabs"></div>
+    <div class="stock-filter-tabs" id="stockFilterTabs">
+      <button class="stock-filter-tab active" data-filter="all" onclick="setStockFilter('all')">All</button>
+      <button class="stock-filter-tab" data-filter="in" onclick="setStockFilter('in')"><span class="stock-dot in"></span> In Stock</button>
+      <button class="stock-filter-tab" data-filter="low" onclick="setStockFilter('low')"><span class="stock-dot low"></span> Low</button>
+      <button class="stock-filter-tab" data-filter="out" onclick="setStockFilter('out')"><span class="stock-dot out"></span> Out</button>
+    </div>
+    <div class="restore-bar" id="restoreBar" style="display:none;">
+      <span><i class="fas fa-eye-slash"></i> <span id="hiddenCount">0</span> hidden</span>
+      <button class="btn btn-sm btn-outline" onclick="restoreAllHidden()"><i class="fas fa-undo"></i> Restore all</button>
+    </div>
+    <div class="products-grid" id="productsGrid"></div>
+  </aside>
+
+  <main class="billing-panel">
+    <div class="panel-header">
+      <h2><i class="fas fa-receipt"></i> New Bill</h2>
+      <div class="bill-info">
+        <span class="badge badge-primary"># <strong id="billNumber">001</strong></span>
+        <span class="badge" id="itemCountBadge"><i class="fas fa-layer-group"></i> <span id="itemCount">0</span></span>
+      </div>
+    </div>
+
+    <div class="customer-row">
+      <div class="customer-field">
+        <label><i class="fas fa-user"></i> Customer Name</label>
+        <input type="text" id="customerName" placeholder="Walk-in Customer">
+      </div>
+      <div class="customer-field">
+        <label><i class="fas fa-phone"></i> Phone</label>
+        <input type="text" id="customerPhone" placeholder="Optional">
+      </div>
+    </div>
+
+    <div class="bill-toolbar">
+      <div class="toolbar-group">
+        <label><i class="fas fa-tag"></i> Discount</label>
+        <div class="discount-input">
+          <input type="number" id="discountValue" value="0" min="0" onchange="updateBill()">
+          <select id="discountType" onchange="updateBill()">
+            <option value="percent">%</option>
+            <option value="fixed">&#2547;</option>
+          </select>
+        </div>
+      </div>
+      <div class="toolbar-group">
+        <label><i class="fas fa-credit-card"></i> Payment</label>
+        <select id="paymentMethod" onchange="updateBill()">
+          <option value="Cash">Cash</option>
+          <option value="Card">Card</option>
+          <option value="bKash">bKash</option>
+          <option value="Nagad">Nagad</option>
+          <option value="Rocket">Rocket</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="bill-items-header">
+      <span class="col-item">Item</span>
+      <span class="col-price">Price</span>
+      <span class="col-qty">Qty</span>
+      <span class="col-total">Total</span>
+      <span class="col-action"></span>
+    </div>
+
+    <div class="bill-items" id="billItems">
+      <div class="empty-bill" id="emptyBill">
+        <i class="fas fa-cart-plus"></i>
+        <p>Click products to add to bill</p>
+        <span>Use search or browse categories</span>
+      </div>
+    </div>
+
+    <div class="bill-summary" id="billSummary">
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span id="subtotal">&#2547; 0.00</span>
+      </div>
+      <div class="summary-row" id="discountRow" style="display:none;">
+        <span>Discount</span>
+        <span id="discountAmount">-&#2547; 0.00</span>
+      </div>
+      <div class="summary-row">
+        <span>Tax (5%)</span>
+        <span id="taxAmount">&#2547; 0.00</span>
+      </div>
+      <div class="summary-row">
+        <span><i class="fas fa-credit-card"></i> <span id="paymentLabel">Cash</span></span>
+        <span></span>
+      </div>
+      <div class="summary-row summary-total">
+        <span>Total</span>
+        <span id="totalAmount">&#2547; 0.00</span>
+      </div>
+    </div>
+
+    <div class="bill-actions">
+      <button class="btn btn-primary" onclick="generateBill()">
+        <i class="fas fa-file-invoice"></i> Generate &amp; Save
+      </button>
+      <button class="btn btn-secondary" onclick="printBill()">
+        <i class="fas fa-print"></i> Print
+      </button>
+      <button class="btn btn-outline" onclick="clearBill()">
+        <i class="fas fa-trash"></i> Clear
+      </button>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="invoiceModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-file-invoice"></i> Invoice</h2>
+      <button class="modal-close" onclick="closeInvoice()">&times;</button>
+    </div>
+    <div class="modal-body" id="invoiceBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="printInvoice()"><i class="fas fa-print"></i> Print</button>
+      <button class="btn btn-secondary" onclick="closeInvoice()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="historyModal">
+  <div class="modal-content modal-lg">
+    <div class="modal-header">
+      <h2><i class="fas fa-history"></i> Bill History</h2>
+      <div class="history-controls">
+        <button class="btn btn-sm btn-danger" onclick="clearAllHistory()" title="Clear All History"><i class="fas fa-trash"></i></button>
+        <button class="modal-close" onclick="toggleHistory()">&times;</button>
+      </div>
+    </div>
+    <div class="modal-body" id="historyBody">
+      <div class="empty-bill">
+        <i class="fas fa-receipt"></i>
+        <p>No bills generated yet</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="productModal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2><i class="fas fa-plus-circle"></i> <span id="productModalTitle">Add Product</span></h2>
+      <button class="modal-close" onclick="closeProductModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editProductId" value="">
+      <div class="form-group">
+        <label><i class="fas fa-tag"></i> Product Name</label>
+        <input type="text" id="productName" placeholder="e.g. Dal, Rice..." class="form-input">
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-money-bill-wave"></i> Price (&#2547;)</label>
+        <input type="number" id="productPrice" placeholder="0" min="0" step="0.5" class="form-input">
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-folder"></i> Category</label>
+        <div class="category-select-row">
+          <select id="productCategory" class="form-input" onchange="onCategoryChange()">
+            <option value="">-- Select or type new --</option>
+          </select>
+          <input type="text" id="productCategoryNew" placeholder="New category name" class="form-input" style="display:none;">
+        </div>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-icons"></i> Icon</label>
+        <div class="icon-picker" id="iconPicker"></div>
+        <input type="hidden" id="productIcon" value="fa-solid fa-cube">
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-warehouse"></i> Stock Quantity</label>
+        <input type="number" id="productStock" placeholder="100" min="0" step="1" class="form-input">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveProduct()"><i class="fas fa-save"></i> Save Product</button>
+      <button class="btn btn-outline" onclick="closeProductModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/db.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>
